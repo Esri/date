@@ -184,6 +184,7 @@ UpgradeLog*.htm
 # Microsoft Fakes
 FakesAssemblies/
 *.suo
+*.vcxproj
 *.vcxproj.filters
 *.npp
 CMakeFiles/*
