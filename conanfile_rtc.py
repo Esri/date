@@ -5,7 +5,7 @@ class DateConan(ConanFile):
     name = "Date"
     version = "3.01"
     url = "https://github.com/Esri/date/tree/runtimecore"
-    license = "https://github.com/Esri/date/blob/runtimecore/LICENSE.txt
+    license = "https://github.com/Esri/date/blob/runtimecore/LICENSE.txt"
     description = "Howard Hinnant's TZDB parser."
 
     # RTC specific triple

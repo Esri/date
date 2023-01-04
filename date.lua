@@ -5,11 +5,11 @@ dofile(_BUILD_DIR .. "/static_library.lua")
 configuration { "*" }
 
 uuid "422C8CCD-5D01-4D78-B0D9-2041681C4EE8"
-defines {
-}
+
 includedirs {
   "include",
 }
+
 files {
   "src/**.cpp",
 }
@@ -33,5 +33,4 @@ if (_PLATFORM_WINDOWS) then
 end
 
 if (_PLATFORM_WINUWP) then
-
 end
