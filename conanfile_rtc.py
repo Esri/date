@@ -2,7 +2,7 @@ from conans import ConanFile
 
 
 class DateConan(ConanFile):
-    name = "Date"
+    name = "date"
     version = "3.01"
     url = "https://github.com/Esri/date/tree/runtimecore"
     license = "https://github.com/Esri/date/blob/runtimecore/LICENSE.txt"
