@@ -21,15 +21,16 @@ def get_tzdb_path_from_arguments() -> str:
     tzdb_path = sys.argv[1]
 
     error_if_file_not_found(tzdb_path, "CET", "Could not find CET in listed directory, are you sure this is a compiled tzdb?")
-    error_if_file_not_found(tzdb_path, "windowsZones.xml", "Could not find windowsZones.xml in listed directory, are you sure this is a compiled tzdb?")
+    error_if_file_not_found(tzdb_path, "windowsZones.xml", "Could not find windowsZones.xml in listed directory, please copy from uncompiled TZDB.")
     error_if_file_not_found(tzdb_path, "leapseconds", "Could not find leapseconds in listed directory, are you sure this is a compiled tzdb?")
+    error_if_file_not_found(tzdb_path, "version", "Could not find version file, please copy from uncompiled tzdb")
 
     return tzdb_path
 
 def get_file_names(tzdb_path: str) -> list:
     files = []
     for (root, dirnames, filenames) in os.walk(tzdb_path):
-        dirname = root[len(tzdb_path)+1:] 
+        dirname = root[len(tzdb_path):] 
         if len(dirname) != 0:
             dirname +='\\'
         files.extend([f'{dirname}{i}' for i in filenames if i[0] != '.' and i[:5] != "posix"  and i not in ["Factory", "iso3166", "right", "+VERSION", "version", "zone", "zone1970", "tzdata", "leap-seconds"]])
