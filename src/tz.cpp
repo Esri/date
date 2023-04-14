@@ -3571,7 +3571,8 @@ tzdb::locate_zone(std::string_view tz_name) const
 tzdb::locate_zone(const std::string& tz_name) const
 #endif
 {
-    auto lower_tz_name = [&tz_name](){std::string lower; std::transform(tz_name.begin(), tz_name.end(), std::back_inserter(lower), [](unsigned char c) {return std::tolower(c); }); return lower; }();
+    std::string lower_tz_name;
+    std::transform(tz_name.begin(), tz_name.end(), std::back_inserter(lower_tz_name), [](unsigned char c) {return std::tolower(c); });
     auto zi = std::lower_bound(zones.begin(), zones.end(), lower_tz_name,
 #if HAS_STRING_VIEW
         [](const time_zone& z, const std::string_view& nm)
