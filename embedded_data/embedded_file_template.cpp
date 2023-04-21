@@ -30,9 +30,7 @@ std::string get_embedded_tzdb_version()
   return version;
 }
 
-imemstream get_stream(Timezone_file_name file)
-{
-  struct fileStreamInfo
+struct fileStreamInfo
   {
     size_t startIndex;
     size_t size;
@@ -40,6 +38,9 @@ imemstream get_stream(Timezone_file_name file)
   static const fileStreamInfo fileToInfoMap[]{
     //EditLocationFileStreamInfo
   };
+  
+imemstream get_stream(Timezone_file_name file)
+{
   const auto info = fileToInfoMap[static_cast<size_t>(file)];
   return imemstream(embedded_tzif_file_data, info.startIndex, info.size);
 }
