@@ -714,7 +714,7 @@ read_date(const string_t& s, unsigned i, rule& r)
     {
         ++i;
         std::chrono::seconds t;
-        i = read_unsigned_time(s, i, t);
+        i = read_signed_time(s, i, t);
         r.time_ = t;
     }
     return i;
