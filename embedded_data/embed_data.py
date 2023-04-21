@@ -53,7 +53,6 @@ def parse_link_entry(link_line: str) -> tuple:
     return LinkInfo(parsed_line[2], parsed_line[1])#Format is LINK    TARGET    NAME
 
 def load_backward_data(tzdb_path: str) -> list:
-    LinkInfo = namedtuple("LinkInfo", "name target")
     with open(os.path.join(tzdb_path, "backward"), "r") as in_file:
         return [parse_link_entry(line) for line in in_file.readlines() if line[0] != '#' and len(line.strip()) != 0]
 

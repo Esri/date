@@ -714,7 +714,7 @@ read_date(const string_t& s, unsigned i, rule& r)
     {
         ++i;
         std::chrono::seconds t;
-        i = read_unsigned_time(s, i, t);
+        i = read_signed_time(s, i, t);
         r.time_ = t;
     }
     return i;
@@ -787,6 +787,7 @@ read_unsigned_time(const string_t& s, unsigned i, std::chrono::seconds& t)
     unsigned x;
     i = read_unsigned(s, i, 2, x, "Expected to find hours [0, 24]");
     t = hours{x};
+   
     if (i != s.size() && s[i] == ':')
     {
         ++i;
