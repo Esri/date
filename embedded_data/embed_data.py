@@ -11,7 +11,7 @@ def filename_to_tz_name(file_name: str) -> str:
     return file_name.replace("\\", "/")
 
 def filename_to_enum_entry(file_name: str, canonical_name: str) -> str:
-    return f'{{R"({filename_to_tz_name(file_name)})", {tz_name_to_enum(canonical_name)} }},\n'
+    return f'{{R"({filename_to_tz_name(file_name.lower())})", {tz_name_to_enum(canonical_name)} }},\n'
 
 def canonical_filename_to_enum_entry(file_name: str) -> str:
     return filename_to_enum_entry(file_name, file_name)
