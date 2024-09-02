@@ -91,6 +91,13 @@ namespace date
 // Configuration |
 //---------------+
 
+#if defined(RTC) //RTC Configuration, We undef any settings set by default by the library.
+#  ifdef INSTALL
+#    undef INSTALL
+#  endif//INSTALL
+#  define INSTALL ""
+#endif
+
 #ifndef ONLY_C_LOCALE
 #  define ONLY_C_LOCALE 0
 #endif
@@ -1316,7 +1323,7 @@ CONSTCD11
 std::chrono::duration<Rep, Period>
 abs(std::chrono::duration<Rep, Period> d)
 {
-    return d >= d.zero() ? d : static_cast<decltype(d)>(-d);
+    return d >= d.zero() ? d : -d;
 }
 
 // round down
@@ -4125,14 +4132,14 @@ private:
     template <class CharT, class Traits, class Duration2>
     friend
     std::basic_ostream<CharT, Traits>&
-    date::to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
+    to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
           const fields<Duration2>& fds, const std::string* abbrev,
           const std::chrono::seconds* offset_sec);
 
     template <class CharT, class Traits, class Duration2, class Alloc>
     friend
     std::basic_istream<CharT, Traits>&
-    date::from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
+    from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
           fields<Duration2>& fds,
           std::basic_string<CharT, Traits, Alloc>* abbrev, std::chrono::minutes* offset);
 };
@@ -4206,8 +4213,8 @@ template <class CharT, class Traits, class Duration>
 inline
 typename std::enable_if
 <
-    !std::is_convertible<Duration, days>::value,
-    std::basic_ostream<CharT, Traits>&
+    std::ratio_less<typename Duration::period, days::period>::value
+    , std::basic_ostream<CharT, Traits>&
 >::type
 operator<<(std::basic_ostream<CharT, Traits>& os, const sys_time<Duration>& tp)
 {
@@ -4787,11 +4794,7 @@ struct fields
     hh_mm_ss<Duration>    tod{};
     bool                  has_tod = false;
 
-#if !defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ <= 409)
-    fields() : ymd{nanyear/0/0}, wd{8u}, tod{}, has_tod{false} {}
-#else
     fields() = default;
-#endif
 
     fields(year_month_day ymd_) : ymd(ymd_) {}
     fields(weekday wd_) : wd(wd_) {}
@@ -6213,13 +6216,8 @@ to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
           const std::chrono::seconds* offset_sec = nullptr)
 {
     using CT = typename std::common_type<Duration, std::chrono::seconds>::type;
-    auto ld = std::chrono::time_point_cast<days>(tp);
-    fields<CT> fds;
-    if (ld <= tp)
-        fds = fields<CT>{year_month_day{ld}, hh_mm_ss<CT>{tp-local_seconds{ld}}};
-    else
-        fds = fields<CT>{year_month_day{ld - days{1}},
-                         hh_mm_ss<CT>{days{1} - (local_seconds{ld} - tp)}};
+    auto ld = floor<days>(tp);
+    fields<CT> fds{year_month_day{ld}, hh_mm_ss<CT>{tp-local_seconds{ld}}};
     return to_stream(os, fmt, fds, abbrev, offset_sec);
 }
 
@@ -6232,13 +6230,8 @@ to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
     using CT = typename std::common_type<Duration, seconds>::type;
     const std::string abbrev("UTC");
     CONSTDATA seconds offset{0};
-    auto sd = std::chrono::time_point_cast<days>(tp);
-    fields<CT> fds;
-    if (sd <= tp)
-        fds = fields<CT>{year_month_day{sd}, hh_mm_ss<CT>{tp-sys_seconds{sd}}};
-    else
-        fds = fields<CT>{year_month_day{sd - days{1}},
-                         hh_mm_ss<CT>{days{1} - (sys_seconds{sd} - tp)}};
+    auto sd = floor<days>(tp);
+    fields<CT> fds{year_month_day{sd}, hh_mm_ss<CT>{tp-sys_seconds{sd}}};
     return to_stream(os, fmt, fds, &abbrev, &offset);
 }
 
@@ -6415,7 +6408,7 @@ read_long_double(std::basic_istream<CharT, Traits>& is, unsigned m = 1, unsigned
         is.setstate(std::ios::failbit);
         return 0;
     }
-    return static_cast<long double>(i) + static_cast<long double>(f)/std::pow(10.L, fcount);
+    return i + f/std::pow(10.L, fcount);
 }
 
 struct rs
@@ -6781,7 +6774,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                         CONSTDATA auto w = Duration::period::den == 1 ? 2 : 3 + dfs::width;
                         int tH;
                         int tM;
-                        long double S{};
+                        long double S;
                         read(is, ru{tH, 1, 2}, CharT{':'}, ru{tM, 1, 2},
                                                CharT{':'}, rld{S, 1, w});
                         checked_set(H, tH, not_a_hour, is);
@@ -6861,7 +6854,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                         CONSTDATA auto w = Duration::period::den == 1 ? 2 : 3 + dfs::width;
                         int tH = not_a_hour;
                         int tM = not_a_minute;
-                        long double S{};
+                        long double S;
                         read(is, ru{tH, 1, 2}, CharT{':'}, ru{tM, 1, 2},
                                                CharT{':'}, rld{S, 1, w});
                         checked_set(H, tH, not_a_hour, is);
@@ -7216,7 +7209,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                         // "%I:%M:%S %p"
                         using dfs = detail::decimal_format_seconds<Duration>;
                         CONSTDATA auto w = Duration::period::den == 1 ? 2 : 3 + dfs::width;
-                        long double S{};
+                        long double S;
                         int tI = not_a_hour_12_value;
                         int tM = not_a_minute;
                         read(is, ru{tI, 1, 2}, CharT{':'}, ru{tM, 1, 2},
@@ -7272,7 +7265,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                     {
                         using dfs = detail::decimal_format_seconds<Duration>;
                         CONSTDATA auto w = Duration::period::den == 1 ? 2 : 3 + dfs::width;
-                        long double S{};
+                        long double S;
                         read(is, rld{S, 1, width == -1 ? w : static_cast<unsigned>(width)});
                         checked_set(s, round_i<Duration>(duration<long double>{S}),
                                     not_a_second, is);
@@ -7306,7 +7299,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                         CONSTDATA auto w = Duration::period::den == 1 ? 2 : 3 + dfs::width;
                         int tH = not_a_hour;
                         int tM = not_a_minute;
-                        long double S{};
+                        long double S;
                         read(is, ru{tH, 1, 2}, CharT{':'}, ru{tM, 1, 2},
                                                CharT{':'}, rld{S, 1, w});
                         checked_set(H, tH, not_a_hour, is);
@@ -7769,11 +7762,11 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
             if (j != not_a_doy && Y != not_a_year)
             {
                 auto ymd_trial = year_month_day{local_days(year{Y}/1/1) + days{j-1}};
-                if (m == not_a_month)
+                if (m == 0)
                     m = static_cast<int>(static_cast<unsigned>(ymd_trial.month()));
                 else if (month(static_cast<unsigned>(m)) != ymd_trial.month())
                     goto broken;
-                if (d == not_a_day)
+                if (d == 0)
                     d = static_cast<int>(static_cast<unsigned>(ymd_trial.day()));
                 else if (day(static_cast<unsigned>(d)) != ymd_trial.day())
                     goto broken;
@@ -8056,13 +8049,12 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
 {
     using Duration = std::chrono::duration<Rep, Period>;
     using CT = typename std::common_type<Duration, std::chrono::seconds>::type;
-    using detail::round_i;
     fields<CT> fds{};
     date::from_stream(is, fmt, fds, abbrev, offset);
     if (!fds.has_tod)
         is.setstate(std::ios::failbit);
     if (!is.fail())
-        d = round_i<Duration>(fds.tod.to_duration());
+        d = std::chrono::duration_cast<Duration>(fds.tod.to_duration());
     return is;
 }
 
@@ -8085,25 +8077,6 @@ public:
         , offset_(offset)
         {}
 
-#if HAS_STRING_VIEW
-    parse_manip(const CharT* format, Parsable& tp,
-                std::basic_string<CharT, Traits, Alloc>* abbrev = nullptr,
-                std::chrono::minutes* offset = nullptr)
-        : format_(format)
-        , tp_(tp)
-        , abbrev_(abbrev)
-        , offset_(offset)
-        {}
-
-    parse_manip(std::basic_string_view<CharT, Traits> format, Parsable& tp,
-                std::basic_string<CharT, Traits, Alloc>* abbrev = nullptr,
-                std::chrono::minutes* offset = nullptr)
-        : format_(format)
-        , tp_(tp)
-        , abbrev_(abbrev)
-        , offset_(offset)
-        {}
-#endif  // HAS_STRING_VIEW
 };
 
 template <class Parsable, class CharT, class Traits, class Alloc>
