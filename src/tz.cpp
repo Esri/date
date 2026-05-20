@@ -2038,7 +2038,9 @@ time_zone::load_data(std::istream& inf,
     }
     for (auto j = 0u; i < transitions_.size(); ++i, ++j)
         transitions_[i].info = ttinfos_.data() + indices[j];
-    inf >> posix_timezone_; //The final entry in a TZIF file is a null terminated posix string
+    std::string posix_tz_str;
+    inf >> posix_tz_str; //The final entry in a TZIF file is a null terminated posix string
+    posix_timezone_ = std::make_unique<Posix::time_zone>(posix_tz_str);
 }
 
 void
@@ -2116,7 +2118,7 @@ time_zone::init() const
 sys_info
 time_zone::load_sys_info(std::vector<detail::transition>::const_iterator i, sys_seconds tp) const
 {
-    auto load_posix_info = [&](){auto tz = Posix::time_zone{ posix_timezone_ }.get_info(tp); if (tz.begin < transitions_.back().timepoint){tz.begin = transitions_.back().timepoint;} return tz;};
+    auto load_posix_info = [&](){auto tz = posix_timezone_->get_info(tp); if (tz.begin < transitions_.back().timepoint){tz.begin = transitions_.back().timepoint;} return tz;};
     using namespace std::chrono;
     assert(!transitions_.empty());
     sys_info r;
@@ -2167,7 +2169,7 @@ time_zone::get_info_impl(local_seconds tp) const
                               return sys_seconds{x.time_since_epoch()} -
                                                          t.info->offset < t.timepoint;
                           });
-    if (tr == transitions_.cend()) return Posix::time_zone{ posix_timezone_ }.get_info(tp);//TODO This logic needs updating for some single transition TZ's
+    if (tr == transitions_.cend()) return posix_timezone_->get_info(tp);//TODO This logic needs updating for some single transition TZ's
     auto sys_tp = sys_seconds{ tp.time_since_epoch() } - tr->info->offset;
     i.first = load_sys_info(tr, sys_tp);
     auto tps = sys_seconds{(tp - i.first.offset).time_since_epoch()};

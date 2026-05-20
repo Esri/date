@@ -133,6 +133,10 @@ static_assert(HAS_REMOTE_API == 0 ? AUTO_DOWNLOAD == 0 : true,
 #    define DATE_API
 #  endif
 #endif
+namespace Posix
+{
+    class time_zone;
+}
 
 namespace date
 {
@@ -786,7 +790,7 @@ private:
     std::vector<detail::zonelet>         zonelets_;
 #endif  // !USE_OS_TZDB
     std::unique_ptr<std::once_flag>      adjusted_;
-    std::string                          posix_timezone_;
+    std::unique_ptr<Posix::time_zone>    posix_timezone_;
 public:
 #if !defined(_MSC_VER) || (_MSC_VER >= 1900)
     time_zone(time_zone&&) = default;
