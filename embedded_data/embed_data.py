@@ -55,6 +55,7 @@ def load_backward_data(tzdb_path: str) -> list:
         return [parse_link_entry(line) for line in in_file.readlines() if line[0] != '#' and len(line.strip()) != 0]
 
 def load_file(tzdb_path: str, filename: str) -> list:
+    filename = filename.lstrip('\\')
     with open(os.path.join(tzdb_path, filename), "rb") as in_file:
         return in_file.read()
 
