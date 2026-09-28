@@ -2,13 +2,13 @@ import os
 from collections import namedtuple
 import sys
 def enumify_tz_name(tz_name: str) -> str:
-    return tz_name.replace('\\', '_').replace('/', '_').replace('+', '_P').replace('-', '_').replace('.', '_')
+    return tz_name.lstrip('\\').replace('\\', '_').replace('/', '_').replace('+', '_P').replace('-', '_').replace('.', '_')
 
 def tz_name_to_enum(tz_name: str) -> str:
     return "Timezone_file_name::" + enumify_tz_name(tz_name)
 
 def filename_to_tz_name(file_name: str) -> str:
-    return file_name.replace("\\", "/")
+    return file_name.lstrip('\\').replace("\\", "/")
 
 def filename_to_enum_entry(file_name: str, canonical_name: str) -> str:
     return f'{{R"({filename_to_tz_name(file_name)})", {tz_name_to_enum(canonical_name)} }},\n'
@@ -52,11 +52,11 @@ def parse_link_entry(link_line: str) -> tuple:
 
 def load_backward_data(tzdb_path: str) -> list:
     with open(os.path.join(tzdb_path, "backward"), "r") as in_file:
-        return [parse_link_entry(line) for line in in_file.readlines() if line[0] != '#' and len(line.strip()) != 0]
+        return [parse_link_entry(line) for line in in_file.readlines() if line.startswith("Link") and len(line.strip()) != 0]
 
 def load_file(tzdb_path: str, filename: str) -> list:
-    filename = filename.lstrip('\\')
-    with open(os.path.join(tzdb_path, filename), "rb") as in_file:
+    stripped_filename = filename.lstrip('\\')
+    with open(os.path.join(tzdb_path, stripped_filename), "rb") as in_file:
         return in_file.read()
 
 def load_file_data(tzdb_path: str, files: list) -> tuple:
